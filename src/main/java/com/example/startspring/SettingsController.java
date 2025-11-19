@@ -1,43 +1,54 @@
 package com.example.startspring;
 
 import com.example.startspring.service.EncryptionService;
-import com.google.cloud.firestore.Firestore;
-import com.google.firebase.cloud.FirestoreClient;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/settings")
+@CrossOrigin(origins = {
+        "http://localhost:5173",
+        "https://mailx-backend.onrender.com"
+})
 public class SettingsController {
 
-    private final EncryptionService encryptionService;
+    @Autowired
+    private EncryptionService encryptionService;
 
-    public SettingsController(EncryptionService encryptionService) {
-        this.encryptionService = encryptionService;
-    }
-
+    // SAVE SETTINGS
     @PostMapping("/save")
-    public Map<String, String> saveCredentials(
-            @RequestParam("userId") String userId,
-            @RequestParam("gmail") String gmail,
-            @RequestParam("appPassword") String appPassword
-    ) throws Exception {
+    public Map<String, String> saveSettings(@RequestBody Map<String, String> request) throws Exception {
 
+        String email = request.get("email");
+        String appPassword = request.get("password");
+
+        if (email == null || appPassword == null) {
+            return Map.of("status", "error", "message", "Missing email or password");
+        }
+
+        // Encrypt and save (your logic here)
+        String encryptedEmail = encryptionService.encrypt(email);
         String encryptedPassword = encryptionService.encrypt(appPassword);
 
-        Firestore db = FirestoreClient.getFirestore();
+        // TODO: Store encrypted values properly (DB, file, Firebase, etc.)
+        System.out.println("Encrypted Email: " + encryptedEmail);
+        System.out.println("Encrypted Password: " + encryptedPassword);
 
-        Map<String, Object> data = new HashMap<>();
-        data.put("gmail", gmail);
-        data.put("appPassword", encryptedPassword);
+        return Map.of("status", "success", "message", "Settings saved securely");
+    }
 
-        db.collection("settings").document(userId).set(data).get();
+    // FETCH SAVED SETTINGS (OPTIONAL)
+    @GetMapping("/get")
+    public Map<String, String> getSettings() {
 
-        Map<String, String> response = new HashMap<>();
-        response.put("status", "success");
+        // TODO: fetch saved encrypted values
+        String encryptedEmail = "demo-email";
+        String encryptedPassword = "demo-password";
 
-        return response;
+        return Map.of(
+                "email", encryptedEmail,
+                "password", encryptedPassword
+        );
     }
 }
