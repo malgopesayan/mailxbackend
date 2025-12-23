@@ -2,53 +2,44 @@ package com.example.startspring;
 
 import com.example.startspring.service.EncryptionService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.Map;
 
 @RestController
-@RequestMapping("/settings")
-@CrossOrigin(origins = {
-        "http://localhost:5173",
-        "https://mailx-backend.onrender.com"
-})
+@RequestMapping("/api")
+@CrossOrigin(origins = "*")
 public class SettingsController {
 
     @Autowired
     private EncryptionService encryptionService;
 
-    // SAVE SETTINGS
-    @PostMapping("/save")
-    public Map<String, String> saveSettings(@RequestBody Map<String, String> request) throws Exception {
+    @PostMapping(
+            value = "/save-settings",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public ResponseEntity<?> saveSettings(
+            @RequestParam("userId") String userId,
+            @RequestParam("gmail") String gmail,
+            @RequestParam("appPassword") String appPassword
+    ) {
+        try {
+            System.out.println("SAVE SETTINGS HIT");
+            System.out.println("UserId: " + userId);
+            System.out.println("Gmail: " + gmail);
 
-        String email = request.get("email");
-        String appPassword = request.get("password");
+            String cleanPassword = appPassword.replaceAll("\\s+", "");
 
-        if (email == null || appPassword == null) {
-            return Map.of("status", "error", "message", "Missing email or password");
+            String encryptedPassword = encryptionService.encrypt(cleanPassword);
+
+            // TODO: save encryptedPassword + gmail using FirebaseService
+            System.out.println("Encrypted password: " + encryptedPassword);
+
+            return ResponseEntity.ok("Settings saved securely");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(e.getMessage());
         }
-
-        // Encrypt and save (your logic here)
-        String encryptedEmail = encryptionService.encrypt(email);
-        String encryptedPassword = encryptionService.encrypt(appPassword);
-
-        // TODO: Store encrypted values properly (DB, file, Firebase, etc.)
-        System.out.println("Encrypted Email: " + encryptedEmail);
-        System.out.println("Encrypted Password: " + encryptedPassword);
-
-        return Map.of("status", "success", "message", "Settings saved securely");
-    }
-
-    // FETCH SAVED SETTINGS (OPTIONAL)
-    @GetMapping("/get")
-    public Map<String, String> getSettings() {
-
-        // TODO: fetch saved encrypted values
-        String encryptedEmail = "demo-email";
-        String encryptedPassword = "demo-password";
-
-        return Map.of(
-                "email", encryptedEmail,
-                "password", encryptedPassword
-        );
     }
 }
