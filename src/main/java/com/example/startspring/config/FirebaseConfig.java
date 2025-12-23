@@ -8,9 +8,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
 
 import javax.annotation.PostConstruct;
-import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 
 @Configuration
 public class FirebaseConfig {
@@ -20,37 +19,31 @@ public class FirebaseConfig {
     @PostConstruct
     public void initialize() {
         try {
-            // 🔹 Prevent multiple initializations
+            System.out.println("🔥 FirebaseConfig initialize() CALLED");
+
+            // Prevent double initialization
             if (!FirebaseApp.getApps().isEmpty()) {
-                logger.info("ℹ️ Firebase already initialized.");
+                logger.info("Firebase already initialized");
                 return;
             }
 
-            // 🔹 Read Firebase service account JSON from ENV variable (Render-safe)
-            String firebaseJson = System.getenv("FIREBASE_SERVICE_ACCOUNT");
+            // ✅ Render Secret File (case-sensitive)
+            String firebaseKeyPath = "/etc/secrets/FIREBASE_SERVICE_ACCOUNT.json";
 
-            if (firebaseJson == null || firebaseJson.isEmpty()) {
-                throw new RuntimeException(
-                        "FIREBASE_SERVICE_ACCOUNT environment variable is not set"
-                );
-            }
-
-            InputStream serviceAccount =
-                    new ByteArrayInputStream(firebaseJson.getBytes(StandardCharsets.UTF_8));
+            InputStream serviceAccount = new FileInputStream(firebaseKeyPath);
 
             FirebaseOptions options = FirebaseOptions.builder()
                     .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                    .setProjectId("mail-fire-99b18") // ✅ your Firebase project ID
-                    .setStorageBucket("mail-fire-99b18.appspot.com") // ✅ correct bucket
+                    .setProjectId("mail-fire-99b18")
+                    .setStorageBucket("mail-fire-99b18.appspot.com")
                     .build();
 
             FirebaseApp.initializeApp(options);
 
-            logger.info("✅ Firebase Admin SDK initialized successfully.");
+            logger.info("✅ Firebase Admin SDK initialized successfully");
 
         } catch (Exception e) {
-            logger.error("❌ Failed to initialize Firebase Admin SDK", e);
+            logger.error("❌ Firebase initialization failed", e);
         }
     }
-
 }
