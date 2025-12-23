@@ -52,4 +52,5 @@ public class FirebaseConfig {
             logger.error("❌ Failed to initialize Firebase Admin SDK", e);
         }
     }
+
 }
